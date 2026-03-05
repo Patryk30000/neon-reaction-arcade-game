@@ -94,6 +94,14 @@ background:#00ffff;
 color:black;
 }
 
+/* PLAYER COUNT */
+#playerCount{
+  font-size:20px;
+  color:#ff00ff;
+  text-shadow: 0 0 5px #ff00ff, 0 0 15px #ff00ff;
+  margin-top:10px;
+}
+
 /* GAME AREA */
 #game{
 width:720px;
@@ -150,6 +158,8 @@ text-shadow:0 0 8px #00ffcc;
 <!-- ARCADE -->
 <div id="arcade" class="hidden">
 <div class="title">Reaction Arcade</div>
+<!-- Player Count -->
+<div id="playerCount">Players online: 0</div>
 <div id="menu">
 <button onclick="startClassic()">Classic Reaction</button>
 <button onclick="startTarget()">Aim Trainer</button>
@@ -181,12 +191,33 @@ const game=document.getElementById("game");
 const result=document.getElementById("result");
 let startTime, timer, score=0, round=0, times=[];
 
-function reset(){
-  game.innerHTML="";
-  game.style.color="white";
-  clearTimeout(timer);
-  document.onkeydown=null;
+/* PLAYER COUNT */
+const playerCountEl = document.getElementById("playerCount");
+const tabId = Date.now() + Math.random();
+function getActiveTabs() {
+    let tabs = localStorage.getItem("activeTabs");
+    return tabs ? JSON.parse(tabs) : [];
 }
+function updateActiveTabs() {
+    let tabs = getActiveTabs();
+    const now = Date.now();
+    tabs = tabs.filter(t => now - t.timestamp < 5000); // active in last 5s
+    const existing = tabs.find(t => t.id === tabId);
+    if (existing) existing.timestamp = now;
+    else tabs.push({id: tabId, timestamp: now});
+    localStorage.setItem("activeTabs", JSON.stringify(tabs));
+    playerCountEl.textContent = "Players online: " + tabs.length;
+}
+setInterval(updateActiveTabs, 2000);
+window.addEventListener("storage", updateActiveTabs);
+window.addEventListener("beforeunload", () => {
+    let tabs = getActiveTabs();
+    tabs = tabs.filter(t => t.id !== tabId);
+    localStorage.setItem("activeTabs", JSON.stringify(tabs));
+});
+
+/* GAME FUNCTIONS */
+function reset(){ game.innerHTML=""; game.style.color="white"; clearTimeout(timer); document.onkeydown=null; }
 
 /* CLASSIC REACTION */
 function startClassic(){
@@ -207,9 +238,7 @@ function startClassic(){
 }
 
 /* AIM TRAINER */
-function startTarget(){
-  reset(); spawnTarget();
-}
+function startTarget(){ reset(); spawnTarget(); }
 function spawnTarget(){
   let t=document.createElement("div");
   t.className="target";
@@ -242,11 +271,7 @@ function nextKey(){
 }
 
 /* COLOR MATCH */
-function startColor(){
-  reset();
-  result.textContent="Click ONLY when word matches color";
-  colorRound();
-}
+function startColor(){ reset(); result.textContent="Click ONLY when word matches color"; colorRound(); }
 function colorRound(){
   const colors=["red","green","blue","yellow"];
   let color=colors[Math.floor(Math.random()*4)];
@@ -266,9 +291,7 @@ function colorRound(){
 }
 
 /* WHACK A MOLE */
-function startMole(){
-  reset(); score=0; spawnMole();
-}
+function startMole(){ reset(); score=0; spawnMole(); }
 function spawnMole(){
   let m=document.createElement("div");
   m.className="target mole";
@@ -276,20 +299,13 @@ function spawnMole(){
   m.style.top=Math.random()*350+"px";
   game.appendChild(m);
   m.onclick=function(){
-    score++;
-    result.textContent="Score: "+score;
-    game.removeChild(m);
+    score++; result.textContent="Score: "+score; game.removeChild(m);
   }
-  timer=setTimeout(()=>{
-    if(game.contains(m)) game.removeChild(m);
-    spawnMole();
-  },800);
+  timer=setTimeout(()=>{ if(game.contains(m)) game.removeChild(m); spawnMole(); },800);
 }
 
 /* 10 ROUND CHALLENGE */
-function startChallenge(){
-  reset(); times=[]; round=0; nextRound();
-}
+function startChallenge(){ reset(); times=[]; round=0; nextRound(); }
 function nextRound(){
   if(round>=10){
     let avg=Math.round(times.reduce((a,b)=>a+b)/times.length);
