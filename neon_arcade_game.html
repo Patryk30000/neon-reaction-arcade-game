@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Neon Reaction Arcade</title>
+<style>
+body{
+margin:0;
+font-family:Arial,Helvetica,sans-serif;
+background:#050510;
+color:white;
+text-align:center;
+}
+
+/* HIDE ELEMENTS */
+.hidden{display:none;}
+
+/* TITLE */
+.title{
+font-size:50px;
+margin-top:40px;
+color:#00ffff;
+text-shadow:0 0 10px #00ffff,0 0 30px #00ffff;
+}
+
+/* LOGIN SCREEN */
+#loginScreen{
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+height:100vh;
+}
+
+.loginBox{
+margin-top:40px;
+padding:40px;
+width:340px;
+border-radius:12px;
+background:#0b0b18;
+border:2px solid #ff00ff;
+box-shadow:0 0 15px #ff00ff,inset 0 0 15px #ff00ff;
+}
+
+.loginBox input{
+width:90%;
+padding:12px;
+margin:12px;
+background:black;
+color:#00ffff;
+border:2px solid #00ffff;
+border-radius:6px;
+box-shadow:0 0 8px #00ffff;
+}
+
+.loginBox button{
+padding:12px 20px;
+margin-top:15px;
+background:transparent;
+border:2px solid #00ffff;
+color:#00ffff;
+cursor:pointer;
+border-radius:8px;
+box-shadow:0 0 10px #00ffff;
+}
+
+.loginBox button:hover{
+background:#00ffff;
+color:black;
+}
+
+#error{
+color:#ff4477;
+margin-top:10px;
+}
+
+/* MENU BUTTONS */
+#menu button{
+display:block;
+margin:12px auto;
+width:260px;
+padding:12px;
+font-size:16px;
+background:transparent;
+color:#00ffff;
+border:2px solid #00ffff;
+border-radius:8px;
+cursor:pointer;
+box-shadow:0 0 10px #00ffff,inset 0 0 10px #00ffff;
+transition:.25s;
+}
+
+#menu button:hover{
+background:#00ffff;
+color:black;
+}
+
+/* GAME AREA */
+#game{
+width:720px;
+height:420px;
+margin:40px auto;
+background:#0c0c18;
+border-radius:12px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:28px;
+position:relative;
+border:2px solid #ff00ff;
+box-shadow:0 0 20px #ff00ff,inset 0 0 20px #ff00ff;
+overflow:hidden;
+}
+
+/* TARGETS */
+.target{
+width:60px;
+height:60px;
+border-radius:50%;
+background:#ff0077;
+position:absolute;
+cursor:pointer;
+box-shadow:0 0 15px #ff0077,0 0 40px #ff0077;
+}
+
+.mole{
+background:#ffaa00;
+}
+
+/* RESULT */
+#result{
+font-size:20px;
+color:#00ffcc;
+text-shadow:0 0 8px #00ffcc;
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+<div class="title">Neon Arcade Login</div>
+<div class="loginBox">
+<input id="email" placeholder="gmail address">
+<br>
+<button onclick="login()">Login</button>
+<div id="error"></div>
+</div>
+</div>
+
+<!-- ARCADE -->
+<div id="arcade" class="hidden">
+<div class="title">Reaction Arcade</div>
+<div id="menu">
+<button onclick="startClassic()">Classic Reaction</button>
+<button onclick="startTarget()">Aim Trainer</button>
+<button onclick="startKey()">Key Reaction</button>
+<button onclick="startColor()">Color Match</button>
+<button onclick="startMole()">Whack-A-Mole</button>
+<button onclick="startChallenge()">10 Round Challenge</button>
+</div>
+<div id="game">Choose a game</div>
+<p id="result"></p>
+</div>
+
+<script>
+/* LOGIN SYSTEM */
+const loginScreen=document.getElementById("loginScreen");
+const arcade=document.getElementById("arcade");
+function login(){
+  let email=document.getElementById("email").value;
+  if(email.endsWith("@gmail.com")){
+    loginScreen.style.display="none";
+    arcade.classList.remove("hidden");
+  }else{
+    document.getElementById("error").textContent="Use a gmail address";
+  }
+}
+
+/* GAME SYSTEM */
+const game=document.getElementById("game");
+const result=document.getElementById("result");
+let startTime, timer, score=0, round=0, times=[];
+
+function reset(){
+  game.innerHTML="";
+  game.style.color="white";
+  clearTimeout(timer);
+  document.onkeydown=null;
+}
+
+/* CLASSIC REACTION */
+function startClassic(){
+  reset();
+  game.style.background="darkred";
+  game.textContent="Wait...";
+  timer=setTimeout(()=>{
+    game.style.background="lime";
+    game.textContent="CLICK!";
+    startTime=Date.now();
+  },Math.random()*3000+2000);
+  game.onclick=function(){
+    if(game.style.background==="lime"){
+      let t=Date.now()-startTime;
+      result.textContent="Reaction: "+t+" ms";
+    }
+  }
+}
+
+/* AIM TRAINER */
+function startTarget(){
+  reset(); spawnTarget();
+}
+function spawnTarget(){
+  let t=document.createElement("div");
+  t.className="target";
+  t.style.left=Math.random()*660+"px";
+  t.style.top=Math.random()*360+"px";
+  game.appendChild(t);
+  startTime=Date.now();
+  t.onclick=function(){
+    let time=Date.now()-startTime;
+    result.textContent="Hit in "+time+" ms";
+    game.removeChild(t);
+    timer=setTimeout(spawnTarget,600);
+  }
+}
+
+/* KEY REACTION */
+function startKey(){ reset(); nextKey(); }
+function nextKey(){
+  const keys=["A","S","D","F","J","K","L"];
+  let key=keys[Math.floor(Math.random()*keys.length)];
+  game.textContent="Press: "+key;
+  startTime=Date.now();
+  document.onkeydown=function(e){
+    if(e.key.toUpperCase()===key){
+      let t=Date.now()-startTime;
+      result.textContent="Correct "+t+" ms";
+      timer=setTimeout(nextKey,900);
+    }
+  }
+}
+
+/* COLOR MATCH */
+function startColor(){
+  reset();
+  result.textContent="Click ONLY when word matches color";
+  colorRound();
+}
+function colorRound(){
+  const colors=["red","green","blue","yellow"];
+  let color=colors[Math.floor(Math.random()*4)];
+  let word=colors[Math.floor(Math.random()*4)];
+  game.textContent=word.toUpperCase();
+  game.style.color=color;
+  startTime=Date.now();
+  timer=setTimeout(colorRound,1200);
+  game.onclick=function(){
+    if(color===word){
+      let t=Date.now()-startTime;
+      result.textContent="Correct "+t+" ms";
+    }else{
+      result.textContent="Wrong click";
+    }
+  }
+}
+
+/* WHACK A MOLE */
+function startMole(){
+  reset(); score=0; spawnMole();
+}
+function spawnMole(){
+  let m=document.createElement("div");
+  m.className="target mole";
+  m.style.left=Math.random()*650+"px";
+  m.style.top=Math.random()*350+"px";
+  game.appendChild(m);
+  m.onclick=function(){
+    score++;
+    result.textContent="Score: "+score;
+    game.removeChild(m);
+  }
+  timer=setTimeout(()=>{
+    if(game.contains(m)) game.removeChild(m);
+    spawnMole();
+  },800);
+}
+
+/* 10 ROUND CHALLENGE */
+function startChallenge(){
+  reset(); times=[]; round=0; nextRound();
+}
+function nextRound(){
+  if(round>=10){
+    let avg=Math.round(times.reduce((a,b)=>a+b)/times.length);
+    game.textContent="Finished!";
+    result.textContent="Average reaction: "+avg+" ms";
+    return;
+  }
+  game.style.background="darkred";
+  game.textContent="Wait...";
+  timer=setTimeout(()=>{
+    game.style.background="lime";
+    game.textContent="CLICK!";
+    startTime=Date.now();
+  },Math.random()*2500+1500);
+  game.onclick=function(){
+    if(game.style.background==="lime"){
+      let t=Date.now()-startTime;
+      times.push(t); round++;
+      result.textContent="Round "+round+": "+t+" ms";
+      nextRound();
+    }
+  }
+}
+</script>
+</body>
+</html>
